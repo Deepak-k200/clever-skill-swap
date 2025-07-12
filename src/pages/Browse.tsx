@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Search, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { sendEmailNotification, getUserEmail } from '@/lib/emailService';
 
 interface UserProfile {
   id: string;
@@ -103,6 +104,9 @@ const Browse = () => {
   const sendSwapRequest = async (targetUserId: string, targetUserName: string) => {
     if (!user?.id) return;
 
+    // Get recipient email for notification
+    const recipientEmail = await getUserEmail(targetUserId);
+
     const requestData = {
       from_user_id: user.id,
       from_user_name: user.name || 'User',
@@ -124,6 +128,20 @@ const Browse = () => {
         variant: "destructive"
       });
     } else {
+      // Send email notification if recipient has email
+      if (recipientEmail) {
+        await sendEmailNotification({
+          to: recipientEmail,
+          subject: `New Skill Swap Request from ${user.name}`,
+          type: 'request_sent',
+          requestData: {
+            fromUserName: user.name || 'User',
+            toUserName: targetUserName,
+            message: requestData.message
+          }
+        });
+      }
+
       toast({
         title: "Request sent!",
         description: `Your swap request has been sent to ${targetUserName}.`,

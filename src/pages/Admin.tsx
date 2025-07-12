@@ -9,6 +9,7 @@ import Navigation from '@/components/Navigation';
 import { Users, MessageSquare, Trash2, Megaphone, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { triggerEmailNotification } from '@/lib/emailService';
 
 interface UserProfile {
   id: string;
@@ -191,6 +192,22 @@ const Admin = () => {
     }
   };
 
+  const testEmailNotification = async (requestId: string, type: 'request_sent' | 'request_accepted' | 'request_rejected') => {
+    const result = await triggerEmailNotification(requestId, type);
+    if (result.success) {
+      toast({
+        title: "Test email sent",
+        description: "Email notification has been triggered successfully.",
+      });
+    } else {
+      toast({
+        title: "Email failed",
+        description: result.error || "Failed to send test email.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!isAdmin) {
     return null;
   }
@@ -343,6 +360,14 @@ const Admin = () => {
                           >
                             {request.status}
                           </Badge>
+                          <Button
+                            onClick={() => testEmailNotification(request.id, 'request_accepted')}
+                            variant="ghost"
+                            size="sm"
+                            title="Test email notification"
+                          >
+                            📧
+                          </Button>
                           <Button
                             onClick={() => deleteRequest(request.id)}
                             variant="destructive"

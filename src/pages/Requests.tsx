@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Check, X, Clock, Send, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { sendEmailNotification, getUserEmail } from '@/lib/emailService';
 
 interface SwapRequest {
   id: string;
@@ -83,6 +84,12 @@ const Requests = () => {
   const receivedRequests = requests.filter(req => req.toUserId === user?.id);
 
   const handleAcceptRequest = async (requestId: string) => {
+    const request = requests.find(req => req.id === requestId);
+    if (!request) return;
+
+    // Get sender email for notification
+    const senderEmail = await getUserEmail(request.fromUserId);
+
     const { error } = await supabase
       .from('swap_requests')
       .update({ status: 'accepted' })
@@ -96,7 +103,20 @@ const Requests = () => {
         variant: "destructive"
       });
     } else {
-      const request = requests.find(req => req.id === requestId);
+      // Send email notification to the sender
+      if (senderEmail) {
+        await sendEmailNotification({
+          to: senderEmail,
+          subject: 'Your skill swap request was accepted!',
+          type: 'request_accepted',
+          requestData: {
+            fromUserName: request.fromUserName,
+            toUserName: request.toUserName,
+            message: request.message
+          }
+        });
+      }
+
       toast({
         title: "Request accepted!",
         description: `You accepted the swap request from ${request?.fromUserName}.`,
@@ -105,6 +125,12 @@ const Requests = () => {
   };
 
   const handleRejectRequest = async (requestId: string) => {
+    const request = requests.find(req => req.id === requestId);
+    if (!request) return;
+
+    // Get sender email for notification
+    const senderEmail = await getUserEmail(request.fromUserId);
+
     const { error } = await supabase
       .from('swap_requests')
       .update({ status: 'rejected' })
@@ -118,6 +144,20 @@ const Requests = () => {
         variant: "destructive"
       });
     } else {
+      // Send email notification to the sender
+      if (senderEmail) {
+        await sendEmailNotification({
+          to: senderEmail,
+          subject: 'Update on your skill swap request',
+          type: 'request_rejected',
+          requestData: {
+            fromUserName: request.fromUserName,
+            toUserName: request.toUserName,
+            message: request.message
+          }
+        });
+      }
+
       toast({
         title: "Request rejected",
         description: "The swap request has been rejected.",
