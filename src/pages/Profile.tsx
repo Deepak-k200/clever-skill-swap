@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +33,7 @@ const Profile = () => {
   const [newSkillOffered, setNewSkillOffered] = useState('');
   const [newSkillWanted, setNewSkillWanted] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
 
   const availabilityOptions = [
     'Weekday Mornings',
@@ -66,6 +66,7 @@ const Profile = () => {
       }
 
       if (data) {
+        setHasExistingProfile(true);
         setProfile({
           name: data.name || user.name || '',
           location: data.location || '',
@@ -75,6 +76,7 @@ const Profile = () => {
           isPublic: data.is_public !== false
         });
       } else {
+        setHasExistingProfile(false);
         // No profile exists, use user data as defaults
         setProfile(prev => ({
           ...prev,
@@ -119,11 +121,22 @@ const Profile = () => {
         is_public: profile.isPublic
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(profileData, {
-          onConflict: 'user_id'
-        });
+      let error;
+
+      if (hasExistingProfile) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('user_id', user.id);
+        error = updateError;
+      } else {
+        // Insert new profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(profileData);
+        error = insertError;
+      }
 
       if (error) {
         console.error('Error saving profile:', error);
@@ -133,6 +146,7 @@ const Profile = () => {
           variant: "destructive"
         });
       } else {
+        setHasExistingProfile(true);
         toast({
           title: "Profile saved!",
           description: "Your profile has been updated successfully.",
