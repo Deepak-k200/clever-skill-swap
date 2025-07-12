@@ -165,6 +165,9 @@ const Browse = () => {
         variant: "destructive"
       });
     } else {
+      // Update local state to show pending status
+      setPendingRequests(prev => new Set([...prev, targetUserId]));
+
       // Send email notification if recipient has email
       if (recipientEmail) {
         await sendEmailNotification({
