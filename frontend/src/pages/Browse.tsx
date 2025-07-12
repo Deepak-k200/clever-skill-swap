@@ -118,21 +118,29 @@ const Browse = () => {
   };
 
   const loadPendingRequests = async () => {
-    if (!user?.id) return;
-
-    const { data, error } = await supabase
-      .from('swap_requests')
-      .select('to_user_id')
-      .eq('from_user_id', user.id)
-      .eq('status', 'pending');
-
-    if (error) {
-      console.error('Error loading pending requests:', error);
+    if (!user?.id) {
+      // If user is not authenticated, clear pending requests
+      setPendingRequests(new Set());
       return;
     }
 
-    const pendingUserIds = new Set(data.map(request => request.to_user_id));
-    setPendingRequests(pendingUserIds);
+    try {
+      const { data, error } = await supabase
+        .from('swap_requests')
+        .select('to_user_id')
+        .eq('from_user_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) {
+        console.error('Error loading pending requests:', error);
+        return;
+      }
+
+      const pendingUserIds = new Set(data.map(request => request.to_user_id));
+      setPendingRequests(pendingUserIds);
+    } catch (error) {
+      console.error('Unexpected error loading pending requests:', error);
+    }
   };
 
   const filteredProfiles = profiles.filter(profile => {
