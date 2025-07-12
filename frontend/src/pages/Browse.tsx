@@ -82,29 +82,39 @@ const Browse = () => {
   }, [user?.id]);
 
   const loadProfiles = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('is_public', true)
-      .neq('user_id', user?.id || '');
+    try {
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .eq('is_public', true);
+      
+      // Only exclude current user if they are authenticated
+      if (user?.id) {
+        query = query.neq('user_id', user.id);
+      }
+      
+      const { data, error } = await query;
 
-    if (error) {
-      console.error('Error loading profiles:', error);
-      return;
+      if (error) {
+        console.error('Error loading profiles:', error);
+        return;
+      }
+
+      const formattedProfiles = data.map((profile) => ({
+        id: profile.user_id,
+        name: profile.name,
+        location: profile.location || '',
+        skillsOffered: profile.skills_offered || [],
+        skillsWanted: profile.skills_wanted || [],
+        availability: profile.availability || [],
+        isPublic: profile.is_public,
+        rating: Math.floor(Math.random() * 2) + 4 // Random rating between 4-5
+      }));
+
+      setProfiles(formattedProfiles);
+    } catch (error) {
+      console.error('Unexpected error loading profiles:', error);
     }
-
-    const formattedProfiles = data.map((profile) => ({
-      id: profile.user_id,
-      name: profile.name,
-      location: profile.location || '',
-      skillsOffered: profile.skills_offered || [],
-      skillsWanted: profile.skills_wanted || [],
-      availability: profile.availability || [],
-      isPublic: profile.is_public,
-      rating: Math.floor(Math.random() * 2) + 4 // Random rating between 4-5
-    }));
-
-    setProfiles(formattedProfiles);
   };
 
   const loadPendingRequests = async () => {
