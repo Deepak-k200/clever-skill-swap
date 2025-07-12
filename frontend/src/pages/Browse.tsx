@@ -107,6 +107,24 @@ const Browse = () => {
     setProfiles(formattedProfiles);
   };
 
+  const loadPendingRequests = async () => {
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from('swap_requests')
+      .select('to_user_id')
+      .eq('from_user_id', user.id)
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error('Error loading pending requests:', error);
+      return;
+    }
+
+    const pendingUserIds = new Set(data.map(request => request.to_user_id));
+    setPendingRequests(pendingUserIds);
+  };
+
   const filteredProfiles = profiles.filter(profile => {
     const matchesSearch = !searchTerm || 
       profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
