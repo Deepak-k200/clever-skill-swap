@@ -62,7 +62,7 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-2xl transition-all duration-300 cursor-pointer group bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '1s'}}>
+            <Card className="hover:shadow-2xl transition-all duration-300 cursor-pointer group bg-white/95 backdrop-blur-sm border-0">
               <CardHeader>
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Users className="h-8 w-8 text-white" />
