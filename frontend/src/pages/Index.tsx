@@ -11,65 +11,71 @@ const Index = () => {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50">
+      <div className="min-h-screen gradient-primary">
         <Navigation />
         <div className="container mx-auto px-4 py-12">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
+            <h1 className="text-5xl font-bold text-white mb-4 animate-pulse-glow">
               Welcome to SkillSwap
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-xl text-white/90 mb-8 font-medium">
               Connect, learn, and grow through skill exchange
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+            <Card className="hover:shadow-2xl transition-all duration-300 cursor-pointer group bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0s'}}>
               <CardHeader>
-                <Search className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform" />
-                <CardTitle>Browse Skills</CardTitle>
-                <CardDescription>
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Search className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl text-gray-800">Browse Skills</CardTitle>
+                <CardDescription className="text-gray-600 text-base">
                   Discover people with skills you want to learn
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button asChild className="w-full">
+                <Button asChild className="w-full btn-gradient text-lg py-6 rounded-xl">
                   <Link to="/browse">
-                    Start Browsing <ArrowRight className="ml-2 h-4 w-4" />
+                    Start Browsing <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+            <Card className="hover:shadow-2xl transition-all duration-300 cursor-pointer group bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0.5s'}}>
               <CardHeader>
-                <MessageSquare className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform" />
-                <CardTitle>Swap Requests</CardTitle>
-                <CardDescription>
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <MessageSquare className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl text-gray-800">Swap Requests</CardTitle>
+                <CardDescription className="text-gray-600 text-base">
                   Manage your skill exchange requests
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button asChild className="w-full">
+                <Button asChild className="w-full btn-secondary-gradient text-lg py-6 rounded-xl">
                   <Link to="/requests">
-                    View Requests <ArrowRight className="ml-2 h-4 w-4" />
+                    View Requests <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+            <Card className="hover:shadow-2xl transition-all duration-300 cursor-pointer group bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '1s'}}>
               <CardHeader>
-                <Users className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform" />
-                <CardTitle>Your Profile</CardTitle>
-                <CardDescription>
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl text-gray-800">Your Profile</CardTitle>
+                <CardDescription className="text-gray-600 text-base">
                   Update your skills and availability
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button asChild className="w-full">
+                <Button asChild className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 text-lg py-6 rounded-xl">
                   <Link to="/profile">
-                    Edit Profile <ArrowRight className="ml-2 h-4 w-4" />
+                    Edit Profile <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </CardContent>
