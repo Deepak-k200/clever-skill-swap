@@ -286,16 +286,44 @@ const Browse = () => {
                 {/* Profile Photo */}
                 <div className="relative">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center overflow-hidden shadow-lg">
-                    <img 
-                      src={profilePhotos[index % profilePhotos.length]} 
-                      alt={profile.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                    <User className="h-10 w-10 text-white absolute inset-0 m-auto" />
+                    {profile.profilePicture ? (
+                      <img 
+                        src={profile.profilePicture} 
+                        alt={profile.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          // Show fallback icon when image fails to load
+                          const parent = target.parentElement;
+                          if (parent) {
+                            const fallbackIcon = parent.querySelector('.fallback-icon') as HTMLElement;
+                            if (fallbackIcon) {
+                              fallbackIcon.style.display = 'block';
+                            }
+                          }
+                        }}
+                      />
+                    ) : (
+                      <img 
+                        src={profilePhotos[index % profilePhotos.length]} 
+                        alt={profile.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          // Show fallback icon when demo image fails to load
+                          const parent = target.parentElement;
+                          if (parent) {
+                            const fallbackIcon = parent.querySelector('.fallback-icon') as HTMLElement;
+                            if (fallbackIcon) {
+                              fallbackIcon.style.display = 'block';
+                            }
+                          }
+                        }}
+                      />
+                    )}
+                    <User className="h-10 w-10 text-white absolute inset-0 m-auto fallback-icon" style={{ display: profile.profilePicture ? 'none' : 'none' }} />
                   </div>
                   <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-yellow-400 to-orange-500 border-2 border-white rounded-full px-2 py-1 shadow-lg">
                     <span className="text-xs font-bold text-white">
