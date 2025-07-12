@@ -113,7 +113,7 @@ const Index = () => {
 
         {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center hover:shadow-2xl transition-all duration-300 bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0s'}}>
+          <Card className="text-center hover:shadow-2xl transition-all duration-300 bg-white/95 backdrop-blur-sm border-0">
             <CardHeader>
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-white" />
