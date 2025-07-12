@@ -133,6 +133,30 @@ frontend:
           agent: "main"
           comment: "Added state tracking for pending requests. Button now shows 'Pending' with clock icon and orange styling when request is sent. Added real-time subscription for swap_requests table to keep UI in sync."
   
+  - task: "Profile picture upload functionality"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Profile.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Fixed profile picture upload by implementing base64 storage instead of Supabase Storage buckets. Users can now upload images up to 2MB, which are converted to base64 and stored directly in the database. Updated Browse page to display actual profile pictures with proper fallbacks."
+
+  - task: "Browse page profile picture display"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Browse.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Updated Browse page to display actual user profile pictures from database instead of hardcoded demo images. Added proper fallback handling for missing or broken images."
+  
   - task: "Email service integration on frontend"
     implemented: true
     working: true
