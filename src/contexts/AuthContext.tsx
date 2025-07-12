@@ -10,10 +10,20 @@ interface User {
   role: 'user' | 'admin';
 }
 
+interface AuthError {
+  message: string;
+  code?: string;
+}
+
+interface AuthResult {
+  success: boolean;
+  error?: AuthError;
+}
+
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  register: (email: string, password: string, name: string) => Promise<AuthResult>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -62,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -71,17 +81,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Login error:', error);
-        return false;
+        return {
+          success: false,
+          error: {
+            message: error.message,
+            code: error.message.includes('Invalid login credentials') ? 'invalid_credentials' : error.name
+          }
+        };
       }
       
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      return {
+        success: false,
+        error: { message: 'An unexpected error occurred' }
+      };
     }
   };
 
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
+  const register = async (email: string, password: string, name: string): Promise<AuthResult> => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -95,13 +114,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Registration error:', error);
-        return false;
+        return {
+          success: false,
+          error: {
+            message: error.message,
+            code: error.name
+          }
+        };
       }
       
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
+      return {
+        success: false,
+        error: { message: 'An unexpected error occurred' }
+      };
     }
   };
 

@@ -21,24 +21,47 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const success = await register(email, password, name);
-      if (success) {
+      const result = await register(email, password, name);
+      if (result.success) {
         toast({
           title: "Welcome to SkillSwap!",
           description: "Your account has been created successfully.",
         });
         navigate('/profile');
       } else {
+        // Handle specific error messages
+        let errorMessage = "Please try again.";
+        
+        if (result.error?.message?.includes('already registered')) {
+          errorMessage = "An account with this email already exists.";
+        } else if (result.error?.message?.includes('Password')) {
+          errorMessage = result.error.message;
+        } else if (result.error?.message?.includes('Invalid email')) {
+          errorMessage = "Please enter a valid email address.";
+        }
+        
         toast({
           title: "Registration failed",
-          description: "Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -89,11 +112,15 @@ const Register = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Create a password"
+                  placeholder="Create a password (min. 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
+                <p className="text-sm text-muted-foreground">
+                  Password must be at least 6 characters long
+                </p>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
