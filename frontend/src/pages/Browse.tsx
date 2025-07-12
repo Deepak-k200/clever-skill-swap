@@ -278,8 +278,7 @@ const Browse = () => {
           {filteredProfiles.map((profile, index) => (
             <div 
               key={profile.id} 
-              className="bg-white/95 backdrop-blur-sm border-0 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 animate-float"
-              style={{animationDelay: `${index * 0.1}s`}}
+              className="bg-white/95 backdrop-blur-sm border-0 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300"
             >
               <div className="flex items-start gap-6">
                 {/* Profile Photo */}
