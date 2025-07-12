@@ -287,7 +287,14 @@ const Browse = () => {
                       onClick={() => sendSwapRequest(profile.id, profile.name)}
                       disabled={pendingRequests.has(profile.id)}
                     >
-                      {pendingRequests.has(profile.id) ? "Pending" : "Request"}
+                      {pendingRequests.has(profile.id) ? (
+                        <>
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pending
+                        </>
+                      ) : (
+                        "Request"
+                      )}
                     </Button>
                   </div>
 
