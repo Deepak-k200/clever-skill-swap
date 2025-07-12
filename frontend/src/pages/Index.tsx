@@ -87,25 +87,25 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50">
+    <div className="min-h-screen gradient-primary">
       <Navigation />
       <div className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-foreground mb-6">
+          <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 animate-pulse-glow">
             Exchange Skills, Build Connections
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto font-medium leading-relaxed">
             Join SkillSwap to share what you know and learn what you need. 
             Connect with others for meaningful skill exchanges.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Button asChild size="lg">
+          <div className="flex gap-6 justify-center flex-wrap">
+            <Button asChild size="lg" className="btn-gradient text-xl px-8 py-4 rounded-xl shadow-2xl hover:scale-105 transition-all duration-300">
               <Link to="/register">
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                Get Started <ArrowRight className="ml-2 h-6 w-6" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg" asChild>
+            <Button variant="outline" size="lg" asChild className="text-xl px-8 py-4 rounded-xl bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 shadow-xl hover:scale-105 transition-all duration-300">
               <Link to="/login">Sign In</Link>
             </Button>
           </div>
@@ -113,49 +113,57 @@ const Index = () => {
 
         {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center hover:shadow-lg transition-shadow">
+          <Card className="text-center hover:shadow-2xl transition-all duration-300 bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0s'}}>
             <CardHeader>
-              <Users className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>Share Skills</CardTitle>
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl text-gray-800">Share Skills</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
+              <p className="text-gray-600 text-base leading-relaxed">
                 List your expertise and help others learn
               </p>
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow">
+          <Card className="text-center hover:shadow-2xl transition-all duration-300 bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0.3s'}}>
             <CardHeader>
-              <Search className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>Find Teachers</CardTitle>
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl text-gray-800">Find Teachers</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
+              <p className="text-gray-600 text-base leading-relaxed">
                 Search for people who can teach you new skills
               </p>
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow">
+          <Card className="text-center hover:shadow-2xl transition-all duration-300 bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0.6s'}}>
             <CardHeader>
-              <MessageSquare className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>Connect</CardTitle>
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl text-gray-800">Connect</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
+              <p className="text-gray-600 text-base leading-relaxed">
                 Send requests and arrange skill exchanges
               </p>
             </CardContent>
           </Card>
 
-          <Card className="text-center hover:shadow-lg transition-shadow">
+          <Card className="text-center hover:shadow-2xl transition-all duration-300 bg-white/95 backdrop-blur-sm border-0 animate-float" style={{animationDelay: '0.9s'}}>
             <CardHeader>
-              <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-              <CardTitle>Safe Platform</CardTitle>
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl text-gray-800">Safe Platform</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
+              <p className="text-gray-600 text-base leading-relaxed">
                 Moderated community with user profiles
               </p>
             </CardContent>
