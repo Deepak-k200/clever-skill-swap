@@ -23,6 +23,7 @@ export type Database = {
           is_public: boolean | null
           location: string | null
           name: string
+          profile_picture: string | null
           skills_offered: string[] | null
           skills_wanted: string[] | null
           updated_at: string
@@ -36,6 +37,7 @@ export type Database = {
           is_public?: boolean | null
           location?: string | null
           name: string
+          profile_picture?: string | null
           skills_offered?: string[] | null
           skills_wanted?: string[] | null
           updated_at?: string
@@ -49,6 +51,7 @@ export type Database = {
           is_public?: boolean | null
           location?: string | null
           name?: string
+          profile_picture?: string | null
           skills_offered?: string[] | null
           skills_wanted?: string[] | null
           updated_at?: string
