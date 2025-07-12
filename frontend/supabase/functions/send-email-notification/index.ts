@@ -1,5 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// Resend API Key - In production, this should be set as a Supabase secret
+const RESEND_API_KEY = 're_AYw7cu2d_DJzHJBgvZxXwMKgxarzsZx9Y'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,12 +12,184 @@ const corsHeaders = {
 interface EmailPayload {
   to: string
   subject: string
-  html: string
+  html?: string
   type: 'request_sent' | 'request_accepted' | 'request_rejected'
   requestData?: {
     fromUserName: string
     toUserName: string
     message: string
+  }
+}
+
+const getEmailTemplate = (type: string, requestData: any): string => {
+  const siteUrl = Deno.env.get('SITE_URL') || 'https://nkedmsegzsznwkzhcues.supabase.co'
+  
+  const baseStyle = `
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    color: #333;
+  `
+  
+  const headerStyle = `
+    background: white;
+    padding: 30px;
+    text-align: center;
+    border-radius: 12px 12px 0 0;
+  `
+  
+  const contentStyle = `
+    background: white;
+    padding: 30px;
+    margin: 0;
+  `
+  
+  const buttonStyle = `
+    display: inline-block;
+    padding: 14px 28px;
+    margin: 20px 0;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+  `
+
+  switch (type) {
+    case 'request_sent':
+      return `
+        <div style="${baseStyle}">
+          <div style="${headerStyle}">
+            <h1 style="margin: 0; color: #6366f1; font-size: 28px;">🤝 SkillSwap</h1>
+            <h2 style="margin: 10px 0 0 0; color: #4b5563; font-weight: 500;">New Skill Exchange Request</h2>
+          </div>
+          <div style="${contentStyle}">
+            <p style="font-size: 18px; color: #374151; margin-bottom: 20px;">Hi <strong>${requestData?.toUserName}</strong>,</p>
+            
+            <p style="font-size: 16px; color: #6b7280; line-height: 1.6;">
+              You have received a new skill swap request from <strong style="color: #6366f1;">${requestData?.fromUserName}</strong>!
+            </p>
+            
+            <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
+              <p style="margin: 0; font-style: italic; color: #4b5563; font-size: 16px;">
+                "${requestData?.message}"
+              </p>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6;">
+              Ready to start your skill exchange journey? Click below to view the request details and respond.
+            </p>
+            
+            <a href="${siteUrl}/requests" 
+               style="${buttonStyle} background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+              📩 View Request
+            </a>
+            
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 0;">
+                Best regards,<br>
+                <strong style="color: #6366f1;">The SkillSwap Team</strong> 🚀
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+        
+    case 'request_accepted':
+      return `
+        <div style="${baseStyle}">
+          <div style="${headerStyle}">
+            <h1 style="margin: 0; color: #10b981; font-size: 28px;">🎉 SkillSwap</h1>
+            <h2 style="margin: 10px 0 0 0; color: #4b5563; font-weight: 500;">Request Accepted!</h2>
+          </div>
+          <div style="${contentStyle}">
+            <p style="font-size: 18px; color: #374151; margin-bottom: 20px;">Hi <strong>${requestData?.fromUserName}</strong>,</p>
+            
+            <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981; text-align: center;">
+              <p style="font-size: 20px; margin: 0; color: #065f46;">
+                🎊 Fantastic news! 🎊
+              </p>
+            </div>
+            
+            <p style="font-size: 16px; color: #6b7280; line-height: 1.6;">
+              <strong style="color: #10b981;">${requestData?.toUserName}</strong> has accepted your skill swap request! 
+            </p>
+            
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">🗓️ Next Steps:</h3>
+              <ul style="color: #6b7280; line-height: 1.8; padding-left: 20px;">
+                <li>Coordinate your meeting schedule</li>
+                <li>Choose your preferred communication platform</li>
+                <li>Discuss specific topics to cover</li>
+                <li>Plan session duration and frequency</li>
+              </ul>
+            </div>
+            
+            <a href="${siteUrl}/requests" 
+               style="${buttonStyle} background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+              💬 View Details & Start Planning
+            </a>
+            
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 0;">
+                Happy learning!<br>
+                <strong style="color: #10b981;">The SkillSwap Team</strong> 🌟
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+        
+    case 'request_rejected':
+      return `
+        <div style="${baseStyle}">
+          <div style="${headerStyle}">
+            <h1 style="margin: 0; color: #f59e0b; font-size: 28px;">📢 SkillSwap</h1>
+            <h2 style="margin: 10px 0 0 0; color: #4b5563; font-weight: 500;">Request Update</h2>
+          </div>
+          <div style="${contentStyle}">
+            <p style="font-size: 18px; color: #374151; margin-bottom: 20px;">Hi <strong>${requestData?.fromUserName}</strong>,</p>
+            
+            <p style="font-size: 16px; color: #6b7280; line-height: 1.6;">
+              <strong>${requestData?.toUserName}</strong> has decided not to proceed with your skill swap request at this time.
+            </p>
+            
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+              <p style="margin: 0; color: #92400e; font-size: 16px;">
+                <strong>💡 Don't worry!</strong> This is just part of the journey. There are many other skilled individuals on SkillSwap who would love to connect with you.
+              </p>
+            </div>
+            
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">🌟 Keep Growing:</h3>
+              <ul style="color: #6b7280; line-height: 1.8; padding-left: 20px;">
+                <li>Explore more profiles and skills</li>
+                <li>Refine your skill offerings</li>
+                <li>Send requests to multiple people</li>
+                <li>Update your profile to attract more matches</li>
+              </ul>
+            </div>
+            
+            <a href="${siteUrl}/browse" 
+               style="${buttonStyle} background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+              🔍 Browse More Skills
+            </a>
+            
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 0;">
+                Keep exploring and connecting!<br>
+                <strong style="color: #6366f1;">The SkillSwap Team</strong> 💪
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+        
+    default:
+      return '<p>Email notification</p>'
   }
 }
 
@@ -32,79 +207,21 @@ serve(async (req) => {
 
     const { to, subject, html, type, requestData }: EmailPayload = await req.json()
 
-    // For demo purposes, we'll log the email instead of actually sending it
-    // In production, you would integrate with a service like SendGrid, Resend, or AWS SES
-    console.log('📧 Email Notification:', {
+    console.log('📧 Processing email notification:', {
       to,
       subject,
       type,
-      requestData,
       timestamp: new Date().toISOString()
     })
 
-    // Simulate email sending with different templates based on type
-    let emailContent = ''
-    
-    switch (type) {
-      case 'request_sent':
-        emailContent = `
-          <h2>New Skill Swap Request</h2>
-          <p>Hi ${requestData?.toUserName},</p>
-          <p>You have received a new skill swap request from <strong>${requestData?.fromUserName}</strong>.</p>
-          <blockquote style="border-left: 4px solid #3b82f6; padding-left: 16px; margin: 16px 0; font-style: italic;">
-            "${requestData?.message}"
-          </blockquote>
-          <p>Log in to your SkillSwap account to respond to this request.</p>
-          <a href="${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/requests" 
-             style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
-            View Request
-          </a>
-          <p>Best regards,<br>The SkillSwap Team</p>
-        `
-        break
-        
-      case 'request_accepted':
-        emailContent = `
-          <h2>🎉 Your Skill Swap Request was Accepted!</h2>
-          <p>Hi ${requestData?.fromUserName},</p>
-          <p>Great news! <strong>${requestData?.toUserName}</strong> has accepted your skill swap request.</p>
-          <p>You can now coordinate your skill exchange session. We recommend reaching out to discuss:</p>
-          <ul>
-            <li>Preferred meeting times</li>
-            <li>Communication platform (video call, in-person, etc.)</li>
-            <li>Specific topics to cover</li>
-            <li>Session duration and frequency</li>
-          </ul>
-          <a href="${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/requests" 
-             style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
-            View Details
-          </a>
-          <p>Happy learning!<br>The SkillSwap Team</p>
-        `
-        break
-        
-      case 'request_rejected':
-        emailContent = `
-          <h2>Skill Swap Request Update</h2>
-          <p>Hi ${requestData?.fromUserName},</p>
-          <p><strong>${requestData?.toUserName}</strong> has declined your skill swap request.</p>
-          <p>Don't worry! There are many other skilled individuals on SkillSwap who would love to connect with you.</p>
-          <a href="${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/browse" 
-             style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
-            Browse More Profiles
-          </a>
-          <p>Keep exploring and connecting!<br>The SkillSwap Team</p>
-        `
-        break
-    }
+    // Generate email content based on type
+    const emailContent = html || getEmailTemplate(type, requestData)
 
-    // In a real implementation, you would send the email here
-    // Example with a service like Resend:
-    /*
-    const response = await fetch('https://api.resend.com/emails', {
+    // Send email using Resend API
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -112,16 +229,48 @@ serve(async (req) => {
         to: [to],
         subject: subject,
         html: emailContent,
+        tags: [
+          { name: 'category', value: 'skill-swap' },
+          { name: 'type', value: type }
+        ]
       }),
     })
-    */
 
-    // For demo, we'll return success
+    if (!resendResponse.ok) {
+      const errorText = await resendResponse.text()
+      console.error('❌ Resend API error:', {
+        status: resendResponse.status,
+        statusText: resendResponse.statusText,
+        error: errorText
+      })
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to send email',
+          details: errorText 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    const result = await resendResponse.json()
+    console.log('✅ Email sent successfully:', { 
+      id: result.id, 
+      to,
+      type,
+      subject 
+    })
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Email notification sent successfully',
-        emailPreview: emailContent 
+        emailId: result.id,
+        emailPreview: emailContent.substring(0, 200) + '...'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -130,12 +279,15 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error sending email notification:', error)
+    console.error('❌ Error in email notification function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Internal server error'
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       }
     )
   }
