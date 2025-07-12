@@ -92,7 +92,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 animate-pulse-glow">
+          <h1 className="text-6xl md:text-7xl font-bold text-white mb-6">
             Exchange Skills, Build Connections
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto font-medium leading-relaxed">
