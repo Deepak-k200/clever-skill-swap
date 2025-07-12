@@ -41,9 +41,10 @@ const Browse = () => {
 
   useEffect(() => {
     loadProfiles();
+    loadPendingRequests();
     
-    // Set up real-time subscription
-    const channel = supabase
+    // Set up real-time subscription for profiles
+    const profilesChannel = supabase
       .channel('profiles-changes')
       .on(
         'postgres_changes',
@@ -58,10 +59,27 @@ const Browse = () => {
       )
       .subscribe();
 
+    // Set up real-time subscription for swap requests
+    const requestsChannel = supabase
+      .channel('requests-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'swap_requests'
+        },
+        () => {
+          loadPendingRequests();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(requestsChannel);
     };
-  }, []);
+  }, [user?.id]);
 
   const loadProfiles = async () => {
     const { data, error } = await supabase
