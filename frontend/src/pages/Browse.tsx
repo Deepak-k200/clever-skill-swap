@@ -28,6 +28,7 @@ const Browse = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
 
   // Sample profile photos for demo purposes
   const profilePhotos = [
