@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,8 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Camera, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface UserProfile {
   name: string;
@@ -17,22 +18,26 @@ interface UserProfile {
   skillsWanted: string[];
   availability: string[];
   isPublic: boolean;
+  profilePicture?: string;
 }
 
 const Profile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<UserProfile>({
     name: user?.name || '',
     location: '',
     skillsOffered: [],
     skillsWanted: [],
     availability: [],
-    isPublic: true
+    isPublic: true,
+    profilePicture: ''
   });
   const [newSkillOffered, setNewSkillOffered] = useState('');
   const [newSkillWanted, setNewSkillWanted] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
 
   const availabilityOptions = [
@@ -73,7 +78,8 @@ const Profile = () => {
           skillsOffered: data.skills_offered || [],
           skillsWanted: data.skills_wanted || [],
           availability: data.availability || [],
-          isPublic: data.is_public !== false
+          isPublic: data.is_public !== false,
+          profilePicture: data.profile_picture || ''
         });
       } else {
         setHasExistingProfile(false);
@@ -85,6 +91,83 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `profile-pictures/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Update profile state
+      setProfile(prev => ({
+        ...prev,
+        profilePicture: publicUrl
+      }));
+
+      toast({
+        title: "Image uploaded!",
+        description: "Your profile picture has been updated.",
+      });
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload failed",
+        description: "An error occurred while uploading the image.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -118,7 +201,8 @@ const Profile = () => {
         skills_offered: profile.skillsOffered,
         skills_wanted: profile.skillsWanted,
         availability: profile.availability,
-        is_public: profile.isPublic
+        is_public: profile.isPublic,
+        profile_picture: profile.profilePicture || null
       };
 
       let error;
@@ -219,6 +303,53 @@ const Profile = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage 
+                    src={profile.profilePicture} 
+                    alt={profile.name}
+                  />
+                  <AvatarFallback className="text-lg">
+                    {profile.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {isUploadingImage && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                  className="flex items-center gap-2"
+                >
+                  {isUploadingImage ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="h-4 w-4" />
+                      {profile.profilePicture ? 'Change Photo' : 'Add Photo'}
+                    </>
+                  )}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name *</Label>
