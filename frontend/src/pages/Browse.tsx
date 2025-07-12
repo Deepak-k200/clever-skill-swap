@@ -109,7 +109,8 @@ const Browse = () => {
         skillsWanted: profile.skills_wanted || [],
         availability: profile.availability || [],
         isPublic: profile.is_public,
-        rating: Math.floor(Math.random() * 2) + 4 // Random rating between 4-5
+        rating: Math.floor(Math.random() * 2) + 4, // Random rating between 4-5
+        profilePicture: profile.profile_picture || null
       }));
 
       setProfiles(formattedProfiles);
