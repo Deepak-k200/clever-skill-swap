@@ -190,28 +190,28 @@ const Browse = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen gradient-primary">
       <Navigation />
       
       {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold text-foreground">Skill Swap Platform</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold text-white">Skill Swap Platform</h1>
+            <div className="flex items-center gap-2 text-sm text-white/80 bg-white/10 rounded-full px-4 py-2">
               <User className="h-4 w-4" />
-              <span>Swap request</span>
+              <span>Find your perfect skill match</span>
             </div>
           </div>
 
           {/* Search and Filter */}
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-40 bg-white/10 backdrop-blur-sm border-white/30 text-white rounded-xl">
                 <SelectValue placeholder="Availability" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+              <SelectContent className="bg-white rounded-xl shadow-xl">
+                <SelectItem value="all">All Times</SelectItem>
                 <SelectItem value="weekday">Weekdays</SelectItem>
                 <SelectItem value="weekend">Weekends</SelectItem>
                 <SelectItem value="evening">Evenings</SelectItem>
@@ -224,13 +224,13 @@ const Browse = () => {
                 placeholder="Search by name, skill, or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-20"
+                className="pr-24 bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 rounded-xl py-3 text-lg focus-ring"
               />
               <Button 
                 size="sm" 
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-3"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-10 px-4 btn-gradient rounded-lg"
               >
-                <Search className="h-4 w-4 mr-1" />
+                <Search className="h-4 w-4 mr-2" />
                 Search
               </Button>
             </div>
@@ -239,17 +239,18 @@ const Browse = () => {
       </div>
 
       {/* Profile Cards */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="space-y-4">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
           {filteredProfiles.map((profile, index) => (
             <div 
               key={profile.id} 
-              className="bg-card border border-border rounded-lg p-4 shadow-sm"
+              className="bg-white/95 backdrop-blur-sm border-0 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 animate-float"
+              style={{animationDelay: `${index * 0.1}s`}}
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-6">
                 {/* Profile Photo */}
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center overflow-hidden shadow-lg">
                     <img 
                       src={profilePhotos[index % profilePhotos.length]} 
                       alt={profile.name}
@@ -259,63 +260,70 @@ const Browse = () => {
                         target.style.display = 'none';
                       }}
                     />
-                    <User className="h-8 w-8 text-muted-foreground absolute inset-0 m-auto" />
+                    <User className="h-10 w-10 text-white absolute inset-0 m-auto" />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 bg-background border border-border rounded-full px-1 py-0.5">
-                    <span className="text-xs font-medium text-foreground">
-                      {profile.rating}/5
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-yellow-400 to-orange-500 border-2 border-white rounded-full px-2 py-1 shadow-lg">
+                    <span className="text-xs font-bold text-white">
+                      ⭐ {profile.rating}/5
                     </span>
                   </div>
                 </div>
 
                 {/* Profile Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="font-semibold text-foreground truncate">{profile.name}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800 truncate">{profile.name}</h3>
                       {profile.location && (
-                        <p className="text-sm text-muted-foreground truncate">{profile.location}</p>
+                        <p className="text-lg text-gray-600 truncate flex items-center gap-1 mt-1">
+                          📍 {profile.location}
+                        </p>
                       )}
                     </div>
                     <Button 
-                      size="sm" 
+                      size="lg" 
                       variant={pendingRequests.has(profile.id) ? "outline" : "default"}
                       className={pendingRequests.has(profile.id) 
-                        ? "ml-2 border-orange-300 text-orange-600 hover:bg-orange-50" 
-                        : "ml-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                        ? "ml-4 border-2 border-orange-400 text-orange-600 hover:bg-orange-50 rounded-xl px-6 py-3 text-lg font-semibold" 
+                        : "ml-4 btn-gradient rounded-xl px-6 py-3 text-lg font-semibold shadow-lg hover:shadow-xl"
                       }
                       onClick={() => sendSwapRequest(profile.id, profile.name)}
                       disabled={pendingRequests.has(profile.id)}
                     >
                       {pendingRequests.has(profile.id) ? (
                         <>
-                          <Clock className="h-3 w-3 mr-1" />
+                          <Clock className="h-5 w-5 mr-2" />
                           Pending
                         </>
                       ) : (
-                        "Request"
+                        <>
+                          <MessageSquare className="h-5 w-5 mr-2" />
+                          Request
+                        </>
                       )}
                     </Button>
                   </div>
 
                   {/* Skills */}
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {profile.skillsOffered.length > 0 && (
                       <div>
-                        <span className="text-xs text-muted-foreground block mb-1">Skills offered:</span>
-                        <div className="flex flex-wrap gap-1">
+                        <span className="text-sm font-semibold text-gray-700 block mb-2 flex items-center gap-2">
+                          🎯 Skills offered:
+                        </span>
+                        <div className="flex flex-wrap gap-2">
                           {profile.skillsOffered.slice(0, 3).map((skill, idx) => (
                             <Badge 
                               key={idx} 
                               variant="secondary" 
-                              className="text-xs py-0.5 px-2 bg-primary/10 text-primary border-primary/20"
+                              className="text-sm py-2 px-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 rounded-full font-medium shadow-md"
                             >
                               {skill}
                             </Badge>
                           ))}
                           {profile.skillsOffered.length > 3 && (
-                            <Badge variant="outline" className="text-xs py-0.5 px-2">
-                              +{profile.skillsOffered.length - 3}
+                            <Badge className="text-sm py-2 px-4 bg-gray-200 text-gray-700 rounded-full font-medium">
+                              +{profile.skillsOffered.length - 3} more
                             </Badge>
                           )}
                         </div>
@@ -324,20 +332,22 @@ const Browse = () => {
 
                     {profile.skillsWanted.length > 0 && (
                       <div>
-                        <span className="text-xs text-muted-foreground block mb-1">Skills wanted:</span>
-                        <div className="flex flex-wrap gap-1">
+                        <span className="text-sm font-semibold text-gray-700 block mb-2 flex items-center gap-2">
+                          🎓 Skills wanted:
+                        </span>
+                        <div className="flex flex-wrap gap-2">
                           {profile.skillsWanted.slice(0, 3).map((skill, idx) => (
                             <Badge 
                               key={idx} 
                               variant="outline" 
-                              className="text-xs py-0.5 px-2 border-muted-foreground/30"
+                              className="text-sm py-2 px-4 border-2 border-emerald-400 text-emerald-600 rounded-full font-medium bg-emerald-50"
                             >
                               {skill}
                             </Badge>
                           ))}
                           {profile.skillsWanted.length > 3 && (
-                            <Badge variant="outline" className="text-xs py-0.5 px-2">
-                              +{profile.skillsWanted.length - 3}
+                            <Badge className="text-sm py-2 px-4 border-2 border-gray-300 text-gray-600 rounded-full font-medium bg-gray-50">
+                              +{profile.skillsWanted.length - 3} more
                             </Badge>
                           )}
                         </div>
@@ -351,12 +361,16 @@ const Browse = () => {
         </div>
 
         {filteredProfiles.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-xl text-white/80 font-medium">
               {searchTerm 
                 ? "No profiles match your search criteria." 
                 : "No public profiles available at the moment."
               }
+            </p>
+            <p className="text-lg text-white/60 mt-2">
+              Try adjusting your search or filters to find more matches.
             </p>
           </div>
         )}
