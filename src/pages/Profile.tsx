@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ const Profile = () => {
   });
   const [newSkillOffered, setNewSkillOffered] = useState('');
   const [newSkillWanted, setNewSkillWanted] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const availabilityOptions = [
     'Weekday Mornings',
@@ -51,59 +53,100 @@ const Profile = () => {
   const loadProfile = async () => {
     if (!user?.id) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (error) {
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile({
+          name: data.name || user.name || '',
+          location: data.location || '',
+          skillsOffered: data.skills_offered || [],
+          skillsWanted: data.skills_wanted || [],
+          availability: data.availability || [],
+          isPublic: data.is_public !== false
+        });
+      } else {
+        // No profile exists, use user data as defaults
+        setProfile(prev => ({
+          ...prev,
+          name: user.name || ''
+        }));
+      }
+    } catch (error) {
       console.error('Error loading profile:', error);
-      return;
-    }
-
-    if (data) {
-      setProfile({
-        name: data.name,
-        location: data.location || '',
-        skillsOffered: data.skills_offered || [],
-        skillsWanted: data.skills_wanted || [],
-        availability: data.availability || [],
-        isPublic: data.is_public
-      });
     }
   };
 
   const handleSave = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save your profile.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const profileData = {
-      user_id: user.id,
-      name: profile.name,
-      email: user.email,
-      location: profile.location,
-      skills_offered: profile.skillsOffered,
-      skills_wanted: profile.skillsWanted,
-      availability: profile.availability,
-      is_public: profile.isPublic
-    };
+    if (!profile.name.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(profileData);
+    setIsLoading(true);
 
-    if (error) {
+    try {
+      const profileData = {
+        user_id: user.id,
+        name: profile.name.trim(),
+        email: user.email,
+        location: profile.location || null,
+        skills_offered: profile.skillsOffered,
+        skills_wanted: profile.skillsWanted,
+        availability: profile.availability,
+        is_public: profile.isPublic
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save profile. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Profile saved!",
+          description: "Your profile has been updated successfully.",
+        });
+      }
+    } catch (error) {
       console.error('Error saving profile:', error);
       toast({
         title: "Error",
-        description: "Failed to save profile. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Profile saved!",
-        description: "Your profile has been updated successfully.",
-      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -265,8 +308,8 @@ const Profile = () => {
               </div>
             </div>
 
-            <Button onClick={handleSave} className="w-full">
-              Save Profile
+            <Button onClick={handleSave} className="w-full" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Profile'}
             </Button>
           </CardContent>
         </Card>

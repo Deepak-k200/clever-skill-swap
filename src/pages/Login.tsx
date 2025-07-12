@@ -23,21 +23,30 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         toast({
           title: "Welcome back!",
-          description: "You have successfully logged in.",
+          description: "You have been logged in successfully.",
         });
         navigate('/');
       } else {
+        let errorMessage = "Please check your credentials and try again.";
+        
+        if (result.error?.code === 'invalid_credentials') {
+          errorMessage = "Invalid email or password. Please try again.";
+        } else if (result.error?.message) {
+          errorMessage = result.error.message;
+        }
+
         toast({
           title: "Login failed",
-          description: "Please check your credentials and try again.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -98,10 +107,13 @@ const Login = () => {
               </p>
             </div>
 
-            <div className="mt-4 p-3 bg-muted rounded-md">
-              <p className="text-xs text-muted-foreground mb-2">Demo credentials:</p>
-              <p className="text-xs">User: any email + any password</p>
-              <p className="text-xs">Admin: admin@skillswap.com + any password</p>
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700 font-medium">Demo Accounts:</p>
+              <p className="text-xs text-blue-600 mt-1">
+                alice@example.com / password123<br />
+                bob@example.com / password123<br />
+                admin@skillswap.com / admin123
+              </p>
             </div>
           </CardContent>
         </Card>
