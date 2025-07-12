@@ -157,52 +157,68 @@ const Browse = () => {
   });
 
   const sendSwapRequest = async (targetUserId: string, targetUserName: string) => {
-    if (!user?.id) return;
-
-    // Get recipient email for notification
-    const recipientEmail = await getUserEmail(targetUserId);
-
-    const requestData = {
-      from_user_id: user.id,
-      from_user_name: user.name || 'User',
-      to_user_id: targetUserId,
-      to_user_name: targetUserName,
-      message: `Hi ${targetUserName}! I'd love to connect for a skill exchange.`,
-      status: 'pending'
-    };
-
-    const { error } = await supabase
-      .from('swap_requests')
-      .insert(requestData);
-
-    if (error) {
-      console.error('Error sending request:', error);
+    if (!user?.id) {
       toast({
-        title: "Error",
-        description: "Failed to send swap request. Please try again.",
+        title: "Authentication required",
+        description: "Please log in to send swap requests.",
         variant: "destructive"
       });
-    } else {
-      // Update local state to show pending status
-      setPendingRequests(prev => new Set([...prev, targetUserId]));
+      return;
+    }
 
-      // Send email notification if recipient has email
-      if (recipientEmail) {
-        await sendEmailNotification({
-          to: recipientEmail,
-          subject: `New Skill Swap Request from ${user.name}`,
-          type: 'request_sent',
-          requestData: {
-            fromUserName: user.name || 'User',
-            toUserName: targetUserName,
-            message: requestData.message
-          }
+    try {
+      // Get recipient email for notification
+      const recipientEmail = await getUserEmail(targetUserId);
+
+      const requestData = {
+        from_user_id: user.id,
+        from_user_name: user.name || 'User',
+        to_user_id: targetUserId,
+        to_user_name: targetUserName,
+        message: `Hi ${targetUserName}! I'd love to connect for a skill exchange.`,
+        status: 'pending'
+      };
+
+      const { error } = await supabase
+        .from('swap_requests')
+        .insert(requestData);
+
+      if (error) {
+        console.error('Error sending request:', error);
+        toast({
+          title: "Error",
+          description: "Failed to send swap request. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        // Update local state to show pending status
+        setPendingRequests(prev => new Set([...prev, targetUserId]));
+
+        // Send email notification if recipient has email
+        if (recipientEmail) {
+          await sendEmailNotification({
+            to: recipientEmail,
+            subject: `New Skill Swap Request from ${user.name}`,
+            type: 'request_sent',
+            requestData: {
+              fromUserName: user.name || 'User',
+              toUserName: targetUserName,
+              message: requestData.message
+            }
+          });
+        }
+
+        toast({
+          title: "Request sent!",
+          description: `Your swap request has been sent to ${targetUserName}.`,
         });
       }
-
+    } catch (error) {
+      console.error('Unexpected error sending request:', error);
       toast({
-        title: "Request sent!",
-        description: `Your swap request has been sent to ${targetUserName}.`,
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
       });
     }
   };
