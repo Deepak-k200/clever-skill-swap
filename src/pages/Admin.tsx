@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Users, MessageSquare, Trash2, Megaphone, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfile {
   id: string;
@@ -44,50 +45,139 @@ const Admin = () => {
       return;
     }
     loadData();
+    
+    // Set up real-time subscriptions for admin
+    const profilesChannel = supabase
+      .channel('admin-profiles')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          loadProfiles();
+        }
+      )
+      .subscribe();
+
+    const requestsChannel = supabase
+      .channel('admin-requests')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'swap_requests'
+        },
+        () => {
+          loadRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(requestsChannel);
+    };
   }, [isAdmin, navigate]);
 
   const loadData = () => {
-    // Load all profiles
-    const allProfiles: UserProfile[] = [];
-    for (let i = 1; i <= 10; i++) {
-      const profile = localStorage.getItem(`profile_${i}`);
-      if (profile) {
-        const parsedProfile = JSON.parse(profile);
-        allProfiles.push({ ...parsedProfile, id: i.toString() });
-      }
+    loadProfiles();
+    loadRequests();
+  };
+
+  const loadProfiles = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading profiles:', error);
+      return;
     }
-    setProfiles(allProfiles);
 
-    // Load all requests
-    const allRequests = JSON.parse(localStorage.getItem('swap_requests') || '[]');
-    setRequests(allRequests);
+    const formattedProfiles = data.map(profile => ({
+      id: profile.user_id,
+      name: profile.name,
+      email: profile.email,
+      location: profile.location || '',
+      skillsOffered: profile.skills_offered || [],
+      skillsWanted: profile.skills_wanted || [],
+      availability: profile.availability || [],
+      isPublic: profile.is_public
+    }));
+
+    setProfiles(formattedProfiles);
   };
 
-  const deleteUser = (userId: string) => {
-    localStorage.removeItem(`profile_${userId}`);
-    
-    // Also remove any requests involving this user
-    const updatedRequests = requests.filter(
-      req => req.fromUserId !== userId && req.toUserId !== userId
-    );
-    localStorage.setItem('swap_requests', JSON.stringify(updatedRequests));
-    
-    loadData();
-    toast({
-      title: "User deleted",
-      description: "The user and all associated data has been removed.",
-    });
+  const loadRequests = async () => {
+    const { data, error } = await supabase
+      .from('swap_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading requests:', error);
+      return;
+    }
+
+    const formattedRequests = data.map(req => ({
+      id: req.id,
+      fromUserId: req.from_user_id,
+      fromUserName: req.from_user_name,
+      toUserId: req.to_user_id,
+      toUserName: req.to_user_name,
+      message: req.message,
+      status: req.status as 'pending' | 'accepted' | 'rejected',
+      createdAt: req.created_at
+    }));
+
+    setRequests(formattedRequests);
   };
 
-  const deleteRequest = (requestId: string) => {
-    const updatedRequests = requests.filter(req => req.id !== requestId);
-    localStorage.setItem('swap_requests', JSON.stringify(updatedRequests));
-    setRequests(updatedRequests);
-    
-    toast({
-      title: "Request deleted",
-      description: "The swap request has been removed.",
-    });
+  const deleteUser = async (userId: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "User deleted",
+        description: "The user profile has been removed.",
+      });
+    }
+  };
+
+  const deleteRequest = async (requestId: string) => {
+    const { error } = await supabase
+      .from('swap_requests')
+      .delete()
+      .eq('id', requestId);
+
+    if (error) {
+      console.error('Error deleting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete request. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Request deleted",
+        description: "The swap request has been removed.",
+      });
+    }
   };
 
   const broadcastMessage = () => {

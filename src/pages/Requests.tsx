@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Check, X, Clock, Send, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SwapRequest {
   id: string;
@@ -25,53 +26,124 @@ const Requests = () => {
   const [requests, setRequests] = useState<SwapRequest[]>([]);
 
   useEffect(() => {
-    loadRequests();
+    if (user?.id) {
+      loadRequests();
+      
+      // Set up real-time subscription
+      const channel = supabase
+        .channel('requests-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'swap_requests'
+          },
+          () => {
+            loadRequests();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user?.id]);
 
-  const loadRequests = () => {
-    const allRequests = JSON.parse(localStorage.getItem('swap_requests') || '[]');
-    setRequests(allRequests);
+  const loadRequests = async () => {
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from('swap_requests')
+      .select('*')
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading requests:', error);
+      return;
+    }
+
+    const formattedRequests = data.map(req => ({
+      id: req.id,
+      fromUserId: req.from_user_id,
+      fromUserName: req.from_user_name,
+      toUserId: req.to_user_id,
+      toUserName: req.to_user_name,
+      message: req.message,
+      status: req.status as 'pending' | 'accepted' | 'rejected',
+      createdAt: req.created_at
+    }));
+
+    setRequests(formattedRequests);
   };
 
   const sentRequests = requests.filter(req => req.fromUserId === user?.id);
   const receivedRequests = requests.filter(req => req.toUserId === user?.id);
 
-  const handleAcceptRequest = (requestId: string) => {
-    const updatedRequests = requests.map(req =>
-      req.id === requestId ? { ...req, status: 'accepted' as const } : req
-    );
-    localStorage.setItem('swap_requests', JSON.stringify(updatedRequests));
-    setRequests(updatedRequests);
-    
-    const request = requests.find(req => req.id === requestId);
-    toast({
-      title: "Request accepted!",
-      description: `You accepted the swap request from ${request?.fromUserName}.`,
-    });
+  const handleAcceptRequest = async (requestId: string) => {
+    const { error } = await supabase
+      .from('swap_requests')
+      .update({ status: 'accepted' })
+      .eq('id', requestId);
+
+    if (error) {
+      console.error('Error accepting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept request. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      const request = requests.find(req => req.id === requestId);
+      toast({
+        title: "Request accepted!",
+        description: `You accepted the swap request from ${request?.fromUserName}.`,
+      });
+    }
   };
 
-  const handleRejectRequest = (requestId: string) => {
-    const updatedRequests = requests.map(req =>
-      req.id === requestId ? { ...req, status: 'rejected' as const } : req
-    );
-    localStorage.setItem('swap_requests', JSON.stringify(updatedRequests));
-    setRequests(updatedRequests);
-    
-    toast({
-      title: "Request rejected",
-      description: "The swap request has been rejected.",
-    });
+  const handleRejectRequest = async (requestId: string) => {
+    const { error } = await supabase
+      .from('swap_requests')
+      .update({ status: 'rejected' })
+      .eq('id', requestId);
+
+    if (error) {
+      console.error('Error rejecting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject request. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Request rejected",
+        description: "The swap request has been rejected.",
+      });
+    }
   };
 
-  const handleDeleteRequest = (requestId: string) => {
-    const updatedRequests = requests.filter(req => req.id !== requestId);
-    localStorage.setItem('swap_requests', JSON.stringify(updatedRequests));
-    setRequests(updatedRequests);
-    
-    toast({
-      title: "Request deleted",
-      description: "The swap request has been deleted.",
-    });
+  const handleDeleteRequest = async (requestId: string) => {
+    const { error } = await supabase
+      .from('swap_requests')
+      .delete()
+      .eq('id', requestId);
+
+    if (error) {
+      console.error('Error deleting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete request. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Request deleted",
+        description: "The swap request has been deleted.",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {

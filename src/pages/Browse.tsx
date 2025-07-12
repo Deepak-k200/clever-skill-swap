@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Search, MapPin, Clock, MessageSquare } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfile {
   id: string;
@@ -26,60 +27,53 @@ const Browse = () => {
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
 
   useEffect(() => {
-    // Load mock profiles
-    const mockProfiles: UserProfile[] = [
-      {
-        id: '2',
-        name: 'Alice Johnson',
-        location: 'New York, NY',
-        skillsOffered: ['JavaScript', 'React', 'Node.js'],
-        skillsWanted: ['Python', 'Machine Learning'],
-        availability: ['Weekday Evenings', 'Weekend Afternoons'],
-        isPublic: true
-      },
-      {
-        id: '3',
-        name: 'Bob Smith',
-        location: 'San Francisco, CA',
-        skillsOffered: ['Python', 'Data Science', 'SQL'],
-        skillsWanted: ['React', 'UI/UX Design'],
-        availability: ['Weekend Mornings', 'Weekend Evenings'],
-        isPublic: true
-      },
-      {
-        id: '4',
-        name: 'Carol Davis',
-        location: 'Austin, TX',
-        skillsOffered: ['UI/UX Design', 'Figma', 'Adobe Creative Suite'],
-        skillsWanted: ['Frontend Development', 'CSS'],
-        availability: ['Weekday Afternoons', 'Weekend Afternoons'],
-        isPublic: true
-      },
-      {
-        id: '5',
-        name: 'David Wilson',
-        location: 'Seattle, WA',
-        skillsOffered: ['Photography', 'Video Editing', 'Lightroom'],
-        skillsWanted: ['Web Development', 'Digital Marketing'],
-        availability: ['Weekday Evenings', 'Weekend Mornings'],
-        isPublic: true
-      }
-    ];
-
-    // Also load user profiles from localStorage
-    const savedProfiles: UserProfile[] = [];
-    for (let i = 1; i <= 10; i++) {
-      const profile = localStorage.getItem(`profile_${i}`);
-      if (profile) {
-        const parsedProfile = JSON.parse(profile);
-        if (parsedProfile.isPublic && i !== parseInt(user?.id || '0')) {
-          savedProfiles.push({ ...parsedProfile, id: i.toString() });
+    loadProfiles();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          loadProfiles();
         }
-      }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadProfiles = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('is_public', true)
+      .neq('user_id', user?.id || '');
+
+    if (error) {
+      console.error('Error loading profiles:', error);
+      return;
     }
 
-    setProfiles([...mockProfiles, ...savedProfiles]);
-  }, [user?.id]);
+    const formattedProfiles = data.map(profile => ({
+      id: profile.user_id,
+      name: profile.name,
+      location: profile.location || '',
+      skillsOffered: profile.skills_offered || [],
+      skillsWanted: profile.skills_wanted || [],
+      availability: profile.availability || [],
+      isPublic: profile.is_public
+    }));
+
+    setProfiles(formattedProfiles);
+  };
 
   const filteredProfiles = profiles.filter(profile => {
     if (!searchTerm) return true;
@@ -92,29 +86,35 @@ const Browse = () => {
     );
   });
 
-  const sendSwapRequest = (targetUserId: string, targetUserName: string) => {
-    // Get existing requests
-    const existingRequests = JSON.parse(localStorage.getItem('swap_requests') || '[]');
-    
-    // Create new request
-    const newRequest = {
-      id: Date.now().toString(),
-      fromUserId: user?.id,
-      fromUserName: user?.name,
-      toUserId: targetUserId,
-      toUserName: targetUserName,
+  const sendSwapRequest = async (targetUserId: string, targetUserName: string) => {
+    if (!user?.id) return;
+
+    const requestData = {
+      from_user_id: user.id,
+      from_user_name: user.name,
+      to_user_id: targetUserId,
+      to_user_name: targetUserName,
       message: `Hi ${targetUserName}! I'd love to connect for a skill exchange.`,
-      status: 'pending',
-      createdAt: new Date().toISOString()
+      status: 'pending'
     };
 
-    // Save request
-    localStorage.setItem('swap_requests', JSON.stringify([...existingRequests, newRequest]));
-    
-    toast({
-      title: "Request sent!",
-      description: `Your swap request has been sent to ${targetUserName}.`,
-    });
+    const { error } = await supabase
+      .from('swap_requests')
+      .insert(requestData);
+
+    if (error) {
+      console.error('Error sending request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send swap request. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Request sent!",
+        description: `Your swap request has been sent to ${targetUserName}.`,
+      });
+    }
   };
 
   return (

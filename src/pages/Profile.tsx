@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfile {
   name: string;
@@ -43,19 +43,68 @@ const Profile = () => {
   ];
 
   useEffect(() => {
-    // Load profile from localStorage
-    const savedProfile = localStorage.getItem(`profile_${user?.id}`);
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
+    if (user?.id) {
+      loadProfile();
     }
   }, [user?.id]);
 
-  const handleSave = () => {
-    localStorage.setItem(`profile_${user?.id}`, JSON.stringify(profile));
-    toast({
-      title: "Profile saved!",
-      description: "Your profile has been updated successfully.",
-    });
+  const loadProfile = async () => {
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading profile:', error);
+      return;
+    }
+
+    if (data) {
+      setProfile({
+        name: data.name,
+        location: data.location || '',
+        skillsOffered: data.skills_offered || [],
+        skillsWanted: data.skills_wanted || [],
+        availability: data.availability || [],
+        isPublic: data.is_public
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+
+    const profileData = {
+      user_id: user.id,
+      name: profile.name,
+      email: user.email,
+      location: profile.location,
+      skills_offered: profile.skillsOffered,
+      skills_wanted: profile.skillsWanted,
+      availability: profile.availability,
+      is_public: profile.isPublic
+    };
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(profileData);
+
+    if (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Profile saved!",
+        description: "Your profile has been updated successfully.",
+      });
+    }
   };
 
   const addSkillOffered = () => {
