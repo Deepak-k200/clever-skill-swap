@@ -1,0 +1,229 @@
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import Navigation from '@/components/Navigation';
+import { Badge } from '@/components/ui/badge';
+import { X, Plus } from 'lucide-react';
+
+interface UserProfile {
+  name: string;
+  location: string;
+  skillsOffered: string[];
+  skillsWanted: string[];
+  availability: string[];
+  isPublic: boolean;
+}
+
+const Profile = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<UserProfile>({
+    name: user?.name || '',
+    location: '',
+    skillsOffered: [],
+    skillsWanted: [],
+    availability: [],
+    isPublic: true
+  });
+  const [newSkillOffered, setNewSkillOffered] = useState('');
+  const [newSkillWanted, setNewSkillWanted] = useState('');
+
+  const availabilityOptions = [
+    'Weekday Mornings',
+    'Weekday Afternoons',
+    'Weekday Evenings',
+    'Weekend Mornings',
+    'Weekend Afternoons',
+    'Weekend Evenings'
+  ];
+
+  useEffect(() => {
+    // Load profile from localStorage
+    const savedProfile = localStorage.getItem(`profile_${user?.id}`);
+    if (savedProfile) {
+      setProfile(JSON.parse(savedProfile));
+    }
+  }, [user?.id]);
+
+  const handleSave = () => {
+    localStorage.setItem(`profile_${user?.id}`, JSON.stringify(profile));
+    toast({
+      title: "Profile saved!",
+      description: "Your profile has been updated successfully.",
+    });
+  };
+
+  const addSkillOffered = () => {
+    if (newSkillOffered.trim()) {
+      setProfile(prev => ({
+        ...prev,
+        skillsOffered: [...prev.skillsOffered, newSkillOffered.trim()]
+      }));
+      setNewSkillOffered('');
+    }
+  };
+
+  const addSkillWanted = () => {
+    if (newSkillWanted.trim()) {
+      setProfile(prev => ({
+        ...prev,
+        skillsWanted: [...prev.skillsWanted, newSkillWanted.trim()]
+      }));
+      setNewSkillWanted('');
+    }
+  };
+
+  const removeSkillOffered = (skill: string) => {
+    setProfile(prev => ({
+      ...prev,
+      skillsOffered: prev.skillsOffered.filter(s => s !== skill)
+    }));
+  };
+
+  const removeSkillWanted = (skill: string) => {
+    setProfile(prev => ({
+      ...prev,
+      skillsWanted: prev.skillsWanted.filter(s => s !== skill)
+    }));
+  };
+
+  const toggleAvailability = (option: string) => {
+    setProfile(prev => ({
+      ...prev,
+      availability: prev.availability.includes(option)
+        ? prev.availability.filter(a => a !== option)
+        : [...prev.availability, option]
+    }));
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl">Your Profile</CardTitle>
+            <CardDescription>
+              Update your information to help others find you for skill exchanges
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={profile.name}
+                  onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  placeholder="City, Country"
+                  value={profile.location}
+                  onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold">Skills I Can Offer</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    placeholder="Add a skill you can teach"
+                    value={newSkillOffered}
+                    onChange={(e) => setNewSkillOffered(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addSkillOffered()}
+                  />
+                  <Button onClick={addSkillOffered} size="sm">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {profile.skillsOffered.map((skill, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      {skill}
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => removeSkillOffered(skill)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold">Skills I Want to Learn</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    placeholder="Add a skill you want to learn"
+                    value={newSkillWanted}
+                    onChange={(e) => setNewSkillWanted(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addSkillWanted()}
+                  />
+                  <Button onClick={addSkillWanted} size="sm">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {profile.skillsWanted.map((skill, index) => (
+                    <Badge key={index} variant="outline" className="flex items-center gap-1">
+                      {skill}
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => removeSkillWanted(skill)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold">Availability</Label>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {availabilityOptions.map((option) => (
+                    <label key={option} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={profile.availability.includes(option)}
+                        onChange={() => toggleAvailability(option)}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={profile.isPublic}
+                  onChange={(e) => setProfile(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="isPublic">Make my profile public (others can find me)</Label>
+              </div>
+            </div>
+
+            <Button onClick={handleSave} className="w-full">
+              Save Profile
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Profile;
