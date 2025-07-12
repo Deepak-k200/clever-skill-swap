@@ -108,11 +108,11 @@ const Profile = () => {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 2MB for base64 storage)
+    if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please select an image smaller than 5MB.",
+        description: "Please select an image smaller than 2MB.",
         variant: "destructive"
       });
       return;
@@ -121,52 +121,45 @@ const Profile = () => {
     setIsUploadingImage(true);
 
     try {
-      // Create unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `profile-pictures/${fileName}`;
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        
+        // Update profile state with base64 image
+        setProfile(prev => ({
+          ...prev,
+          profilePicture: base64String
+        }));
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(filePath, file);
+        toast({
+          title: "Image uploaded!",
+          description: "Your profile picture has been updated. Don't forget to save your profile.",
+        });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
+        setIsUploadingImage(false);
+      };
+
+      reader.onerror = () => {
+        console.error('Error reading file');
         toast({
           title: "Upload failed",
-          description: "Failed to upload image. Please try again.",
+          description: "Failed to read the image file. Please try again.",
           variant: "destructive"
         });
-        return;
-      }
+        setIsUploadingImage(false);
+      };
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(filePath);
-
-      const publicUrl = urlData.publicUrl;
-
-      // Update profile state
-      setProfile(prev => ({
-        ...prev,
-        profilePicture: publicUrl
-      }));
-
-      toast({
-        title: "Image uploaded!",
-        description: "Your profile picture has been updated.",
-      });
+      // Read the file as data URL (base64)
+      reader.readAsDataURL(file);
 
     } catch (error) {
       console.error('Error uploading image:', error);
       toast({
         title: "Upload failed",
-        description: "An error occurred while uploading the image.",
+        description: "An error occurred while processing the image.",
         variant: "destructive"
       });
-    } finally {
       setIsUploadingImage(false);
     }
   };
