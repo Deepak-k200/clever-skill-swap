@@ -108,27 +108,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             name: name
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
       
       if (error) {
         console.error('Registration error:', error);
+        
+        // Handle specific error cases
+        let errorMessage = error.message;
+        if (error.message.includes('User already registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead.';
+        } else if (error.message.includes('Password should be at least')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        } else if (error.message.includes('Unable to validate email address')) {
+          errorMessage = 'Please enter a valid email address.';
+        }
+        
         return {
           success: false,
           error: {
-            message: error.message,
+            message: errorMessage,
             code: error.name
           }
         };
       }
       
+      // Don't automatically sign in the user - they need to confirm email first
       return { success: true };
     } catch (error) {
       console.error('Registration error:', error);
       return {
         success: false,
-        error: { message: 'An unexpected error occurred' }
+        error: { message: 'An unexpected error occurred during registration' }
       };
     }
   };
