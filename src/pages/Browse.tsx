@@ -2,15 +2,12 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
-import { Search, MapPin, Clock, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfile {
@@ -28,10 +25,8 @@ const Browse = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(6);
 
   // Sample profile photos for demo purposes
   const profilePhotos = [
@@ -78,7 +73,7 @@ const Browse = () => {
       return;
     }
 
-    const formattedProfiles = data.map((profile, index) => ({
+    const formattedProfiles = data.map((profile) => ({
       id: profile.user_id,
       name: profile.name,
       location: profile.location || '',
@@ -93,27 +88,24 @@ const Browse = () => {
   };
 
   const filteredProfiles = profiles.filter(profile => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      profile.name.toLowerCase().includes(search) ||
-      profile.skillsOffered.some(skill => skill.toLowerCase().includes(search)) ||
-      profile.skillsWanted.some(skill => skill.toLowerCase().includes(search)) ||
-      profile.location.toLowerCase().includes(search)
-    );
-  });
+    const matchesSearch = !searchTerm || 
+      profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.skillsOffered.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      profile.skillsWanted.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      profile.location.toLowerCase().includes(searchTerm.toLowerCase());
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProfiles = filteredProfiles.slice(startIndex, startIndex + itemsPerPage);
+    const matchesAvailability = availabilityFilter === 'all' || 
+      profile.availability.some(avail => avail.toLowerCase().includes(availabilityFilter.toLowerCase()));
+
+    return matchesSearch && matchesAvailability;
+  });
 
   const sendSwapRequest = async (targetUserId: string, targetUserName: string) => {
     if (!user?.id) return;
 
     const requestData = {
       from_user_id: user.id,
-      from_user_name: user.name,
+      from_user_name: user.name || 'User',
       to_user_id: targetUserId,
       to_user_name: targetUserName,
       message: `Hi ${targetUserName}! I'd love to connect for a skill exchange.`,
@@ -142,172 +134,151 @@ const Browse = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Swap Request</h1>
-          
-          {/* Search and Filter Bar */}
-          <div className="flex gap-4 mb-6">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+      
+      {/* Header */}
+      <div className="bg-card border-b border-border">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-semibold text-foreground">Skill Swap Platform</h1>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>Swap request</span>
+            </div>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="flex gap-3">
+            <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Availability" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="accepted">Accepted</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="weekday">Weekdays</SelectItem>
+                <SelectItem value="weekend">Weekends</SelectItem>
+                <SelectItem value="evening">Evenings</SelectItem>
+                <SelectItem value="morning">Mornings</SelectItem>
               </SelectContent>
             </Select>
             
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <div className="relative flex-1">
               <Input
                 placeholder="Search by name, skill, or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pr-20"
               />
-              <Button size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2">
+              <Button 
+                size="sm" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-3"
+              >
+                <Search className="h-4 w-4 mr-1" />
                 Search
               </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Profile Cards */}
-        <div className="space-y-4 mb-8">
-          {paginatedProfiles.map((profile, index) => (
-            <Card key={profile.id} className="bg-card border border-border">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  {/* Profile Photo */}
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage 
+      {/* Profile Cards */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="space-y-4">
+          {filteredProfiles.map((profile, index) => (
+            <div 
+              key={profile.id} 
+              className="bg-card border border-border rounded-lg p-4 shadow-sm"
+            >
+              <div className="flex items-start gap-4">
+                {/* Profile Photo */}
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                    <img 
                       src={profilePhotos[index % profilePhotos.length]} 
-                      alt={profile.name} 
+                      alt={profile.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
                     />
-                    <AvatarFallback className="bg-muted text-lg font-semibold">
-                      {profile.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  {/* Profile Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">{profile.name}</h3>
-                        {profile.location && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {profile.location}
-                          </p>
-                        )}
-                        {profile.rating && (
-                          <p className="text-sm text-muted-foreground">
-                            Rating: {profile.rating}/5
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Status and Actions */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-blue-500">Pending</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-green-600 border-green-600 hover:bg-green-50"
-                        >
-                          Accept
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-red-600 border-red-600 hover:bg-red-50"
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Skills */}
-                    <div className="space-y-2">
-                      {profile.skillsOffered.length > 0 && (
-                        <div>
-                          <span className="text-sm font-medium text-foreground">Skills Offered: </span>
-                          <div className="inline-flex flex-wrap gap-1 ml-2">
-                            {profile.skillsOffered.slice(0, 3).map((skill, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {profile.skillsOffered.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{profile.skillsOffered.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {profile.skillsWanted.length > 0 && (
-                        <div>
-                          <span className="text-sm font-medium text-foreground">Skills Wanted: </span>
-                          <div className="inline-flex flex-wrap gap-1 ml-2">
-                            {profile.skillsWanted.slice(0, 3).map((skill, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {profile.skillsWanted.length > 3 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{profile.skillsWanted.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <User className="h-8 w-8 text-muted-foreground absolute inset-0 m-auto" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-background border border-border rounded-full px-1 py-0.5">
+                    <span className="text-xs font-medium text-foreground">
+                      {profile.rating}/5
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Profile Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-foreground truncate">{profile.name}</h3>
+                      {profile.location && (
+                        <p className="text-sm text-muted-foreground truncate">{profile.location}</p>
+                      )}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="ml-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={() => sendSwapRequest(profile.id, profile.name)}
+                    >
+                      Request
+                    </Button>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="space-y-2">
+                    {profile.skillsOffered.length > 0 && (
+                      <div>
+                        <span className="text-xs text-muted-foreground block mb-1">Skills offered:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {profile.skillsOffered.slice(0, 3).map((skill, idx) => (
+                            <Badge 
+                              key={idx} 
+                              variant="secondary" 
+                              className="text-xs py-0.5 px-2 bg-primary/10 text-primary border-primary/20"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                          {profile.skillsOffered.length > 3 && (
+                            <Badge variant="outline" className="text-xs py-0.5 px-2">
+                              +{profile.skillsOffered.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.skillsWanted.length > 0 && (
+                      <div>
+                        <span className="text-xs text-muted-foreground block mb-1">Skills wanted:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {profile.skillsWanted.slice(0, 3).map((skill, idx) => (
+                            <Badge 
+                              key={idx} 
+                              variant="outline" 
+                              className="text-xs py-0.5 px-2 border-muted-foreground/30"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                          {profile.skillsWanted.length > 3 && (
+                            <Badge variant="outline" className="text-xs py-0.5 px-2">
+                              +{profile.skillsWanted.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination className="mt-8">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-              
-              {[...Array(totalPages)].map((_, i) => (
-                <PaginationItem key={i + 1}>
-                  <PaginationLink
-                    onClick={() => setCurrentPage(i + 1)}
-                    isActive={currentPage === i + 1}
-                    className="cursor-pointer"
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
 
         {filteredProfiles.length === 0 && (
           <div className="text-center py-12">
