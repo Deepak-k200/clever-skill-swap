@@ -101,3 +101,35 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "In browse page when clicked on request it should change to pending"
+
+frontend:
+  - task: "Browse page request button UI modification"
+    implemented: true
+    working: "unknown"
+    file: "/app/frontend/src/pages/Browse.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "unknown"
+          agent: "main"
+          comment: "Added state tracking for pending requests. Button now shows 'Pending' with clock icon and orange styling when request is sent. Added real-time subscription for swap_requests table to keep UI in sync."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Browse page request button UI modification"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Implemented UI modification for browse page request buttons. Added pending state tracking, visual feedback with clock icon and orange styling, and real-time updates. Need to test the functionality with user authentication and profile creation."
