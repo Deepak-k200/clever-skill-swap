@@ -279,10 +279,15 @@ const Browse = () => {
                     </div>
                     <Button 
                       size="sm" 
-                      className="ml-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                      variant={pendingRequests.has(profile.id) ? "outline" : "default"}
+                      className={pendingRequests.has(profile.id) 
+                        ? "ml-2 border-orange-300 text-orange-600 hover:bg-orange-50" 
+                        : "ml-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                      }
                       onClick={() => sendSwapRequest(profile.id, profile.name)}
+                      disabled={pendingRequests.has(profile.id)}
                     >
-                      Request
+                      {pendingRequests.has(profile.id) ? "Pending" : "Request"}
                     </Button>
                   </div>
 
