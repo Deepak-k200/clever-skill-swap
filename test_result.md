@@ -163,7 +163,7 @@ frontend:
     file: "/app/frontend/src/lib/emailService.ts"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: true
           agent: "main"
