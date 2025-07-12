@@ -20,6 +20,7 @@ interface UserProfile {
   availability: string[];
   isPublic: boolean;
   rating?: number;
+  profilePicture?: string;
 }
 
 const Browse = () => {
