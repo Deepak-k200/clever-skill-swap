@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
-import { Search, User } from 'lucide-react';
+import { Search, User, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sendEmailNotification, getUserEmail } from '@/lib/emailService';
 
